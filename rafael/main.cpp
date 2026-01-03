@@ -38,7 +38,7 @@ unsigned long long generateFibonacci(unsigned long long n) {
     unsigned long long b = 1;
     unsigned long long c;
 
-    for (unsigned long long i = 3; i < n; i++) {
+    for (unsigned long long i = 3; i < n; ++i) {
         c = a + b;
         a = b;
         b = c;
@@ -53,7 +53,7 @@ int calculateScore(unsigned howMany) {
         return 0;
     }
     const int multiplicateur = 100;
-    unsigned long long fib_term = generateFibonacci(howMany);
+    unsigned long long fib_term = generateFibonacci(howMany + 1);
     return (fib_term * multiplicateur);
 }
 
@@ -219,7 +219,7 @@ bool atLeastThreeInARow (const CMat & grid, CPosition & pos, unsigned & howMany)
     return false;
 }
 
-void removalInColumn (CMat grid, const CPosition & pos, unsigned howMany)
+void removalInColumn (CMat & grid, const CPosition & pos, unsigned howMany)
 {
     const unsigned N = grid.size();
     if (pos.ord >= N || pos.abs >= N)
@@ -240,7 +240,7 @@ void removalInColumn (CMat grid, const CPosition & pos, unsigned howMany)
     }
 }
 
-void removalInRow (CMat grid, const CPosition & pos, unsigned howMany)
+void removalInRow (CMat & grid, const CPosition & pos, unsigned howMany)
 {
     const unsigned N = grid.size();
     if (pos.abs >= N || pos.ord >= N)
@@ -346,7 +346,7 @@ int main()
         } while (match_trouve); // Tant qu'il y a des réactions en chaîne
 
         // 3. Mise à jour du nombre de coups
-        coups_restants--;c
+        coups_restants--;
         // Gestion des cas où le coup n'a produit aucun match
         if (!match_trouve)
         {
