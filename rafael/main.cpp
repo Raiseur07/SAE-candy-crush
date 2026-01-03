@@ -16,6 +16,7 @@ const unsigned KJaune   (33);
 const unsigned KBleu    (34);
 const unsigned KMAgenta (35);
 const unsigned KCyan    (36);
+const unsigned KImpossible (0);
 
 void clearScreen () {
     cout << "\033[H\033[2J";
@@ -23,6 +24,50 @@ void clearScreen () {
 
 void couleur (const unsigned & coul) {
     cout << "\033[" << coul <<"m";
+}
+
+// Fonction de pour sortir le n-ième nombre de la suite de Fibonacci (source : https://www.delftstack.com/fr/howto/cpp/fibonacci-sequence-in-cpp/)
+unsigned long long generateFibonacci(unsigned long long n) {
+    if (n == 1) {
+        return 0;
+    } else if (n == 2 || n == 3) {
+        return 1;
+    }
+
+    unsigned long long a = 1;
+    unsigned long long b = 1;
+    unsigned long long c;
+
+    for (unsigned long long i = 3; i < n; i++) {
+        c = a + b;
+        a = b;
+        b = c;
+    }
+
+    return c;
+}
+
+int calculateScore(unsigned howMany) {
+    if (howMany < 3)
+    {
+        return 0;
+    }
+    const int multiplicateur = 100;
+    unsigned long long fib_term = generateFibonacci(howMany);
+    return (fib_term * multiplicateur);
+}
+
+bool saisirCoup(unsigned N, CPosition & pos, char & direction) {
+    cout << "\nMenu : Z, S, Q, D (Direction)\n";
+    cout << "Entrez Ligne (ord) et Colonne (abs) du bonbon a deplacer: ";
+    if (!(cin >> pos.ord >> pos.abs)) return false;
+
+    cout << "Entrez la direction (Z/S/Q/D) : ";
+    if (!(cin >> direction)) return false;
+
+    if (pos.ord >= N || pos.abs >= N) return false;
+
+    return true;
 }
 
 void InitGrid(CMat & Grid, unsigned Size, const unsigned KNbCandies)
@@ -37,13 +82,13 @@ void InitGrid(CMat & Grid, unsigned Size, const unsigned KNbCandies)
     }
 }
 
-void  DisplayGrid (const CMat & Grid, const unsigned & KNbCandies)
+void  DisplayGrid (const CMat & Grid)
 {
     for (const CVLine & uneLigne : Grid)
     {
         for (const unsigned & uneCel : uneLigne)
         {
-            if (!(0 < uneCel && uneCel < KNbCandies+1))
+            if (uneCel == KImpossible)
             {
                 cout << " ";
             }
@@ -58,8 +103,8 @@ void  DisplayGrid (const CMat & Grid, const unsigned & KNbCandies)
 
 void MakeAMove (CMat & Grid, const CPosition & Pos, const char & Direction)
 {
-    unsigned i = Pos.abs;
-    unsigned j = Pos.ord;
+    unsigned i = Pos.ord;
+    unsigned j = Pos.abs;
     unsigned n = Grid.size();
     if (i >= n || j >= n) return;
     if ((Direction == 'Z' || Direction == 'z') && i > 0)
@@ -80,160 +125,245 @@ void MakeAMove (CMat & Grid, const CPosition & Pos, const char & Direction)
     }
 }
 
-bool atLeastThreeInAColumn (const CMat & grid, CPosition & pos, unsigned & howMany)
+char getInverseDirection(char Direction)
 {
-    unsigned k = grid.size();
-    if (k == 0) return false;
-    unsigned l = grid[0].size();
-    for (unsigned i (0); i < l; ++i)
+    char dir = toupper(Direction);
+    if (dir == 'Z') return 'S';
+    if (dir == 'S') return 'Z';
+    if (dir == 'Q') return 'D';
+    if (dir == 'D') return 'Q';
+    return Direction;
+}
+
+bool atLeastThreeInAColumn (const CMat & grid, CPosition & pos, unsigned & howMany) {
+    const unsigned N = grid.size();
+    for (unsigned col = 0; col < N; ++col)
     {
-        unsigned c (1);
-        for (unsigned j (1); j < k; ++j)
+        unsigned count = 1;
+        unsigned start_row = 0;
+        for (unsigned row = 0; row < N - 1; ++row)
         {
-            if (grid[j][i] == grid[j - 1][i])
+            if (grid[row][col] == KImpossible)
             {
-                ++c;
+                count = 1;
+                start_row = row + 1;
+                continue;
+            }
+
+            if (grid[row][col] == grid[row + 1][col]) {
+                count++;
             }
             else
             {
-                if (c >= 3)
+                if (count >= 3)
                 {
-                    pos.abs  = j - c;
-                    pos.ord = i;
-                    howMany    = c;
+                    pos.ord = start_row;
+                    pos.abs = col;
+                    howMany = count;
                     return true;
                 }
-                c = 1;
+                count = 1;
+                start_row = row + 1;
             }
         }
-        if (c >= 3)
+        if (count >= 3)
         {
-            pos.abs  = k - c;
-            pos.ord = i;
-            howMany    = c;
+            pos.ord = start_row;
+            pos.abs = col;
+            howMany = count;
             return true;
         }
     }
     return false;
 }
 
-bool atLeastThreeInARow (const CMat & grid, CPosition & pos, unsigned & howMany)
-{
-    unsigned k = grid.size();
-    if (k == 0) return false;
-    unsigned l = grid[0].size();
-    for (unsigned i (0); i < k; ++i)
+bool atLeastThreeInARow (const CMat & grid, CPosition & pos, unsigned & howMany) {
+    const unsigned N = grid.size();
+    for (unsigned row = 0; row < N; ++row)
     {
-        unsigned c (1);
-        for (unsigned j (1); j < l; ++j)
+        unsigned count = 1;
+        unsigned start_col = 0;
+        for (unsigned col = 0; col < N - 1; ++col)
         {
-            if (grid[i][j] == grid[i][j - 1])
+            if (grid[row][col] == KImpossible)
             {
-                ++c;
+                count = 1;
+                start_col = col + 1;
+                continue;
+            }
+            if (grid[row][col] == grid[row][col + 1])
+            {
+                count++;
             }
             else
             {
-                if (c >= 3)
+                if (count >= 3)
                 {
-                    pos.abs  = i;
-                    pos.ord = j - c;
-                    howMany    = c;
+                    pos.ord = row;
+                    pos.abs = start_col;
+                    howMany = count;
                     return true;
                 }
-                c = 1;
+                count = 1;
+                start_col = col + 1;
             }
         }
-        if (c >= 3)
+        if (count >= 3)
         {
-            pos.abs  = i;
-            pos.ord = l - c;
-            howMany    = c;
+            pos.ord = row;
+            pos.abs = start_col;
+            howMany = count;
             return true;
         }
     }
-
     return false;
 }
 
-// Définitions supposées (à adapter à votre environnement) :
-// const int KImpossible = 0; // Ou une autre valeur "impossible" appropriée
-// typedef std::vector<std::vector<int>> mat; // Ou votre type de grille
-// struct maPosition {
-//     unsigned ord; // Ligne (row)
-//     unsigned abs; // Colonne (column)
-// };
-
-void removalInColumn (mat & grid, const maPosition & pos, unsigned howMany) {
-    // 1. Déterminer les dimensions de la grille
-    if (grid.empty()) {
+void removalInColumn (CMat grid, const CPosition & pos, unsigned howMany)
+{
+    const unsigned N = grid.size();
+    if (pos.ord >= N || pos.abs >= N)
+    {
         return;
     }
-    unsigned numRows = grid.size();
-    unsigned numCols = grid[0].size();
+    const unsigned col = pos.abs;
+    const unsigned start_row = pos.ord;
+    const unsigned end_row = start_row + howMany;
+    for (unsigned i = end_row; i < N; ++i)
+    {
+        unsigned target_row = i - howMany;
+        grid[target_row][col] = grid[i][col];
+    }
+    for (unsigned i = N - howMany; i < N; ++i)
+    {
+        grid[i][col] = KImpossible;
+    }
+}
 
-    // 2. Vérifier si la position de départ et le nombre à supprimer sont valides
-    // On vérifie seulement la colonne pos.abs et la ligne pos.ord
-    if (pos.abs >= numCols || pos.ord >= numRows || howMany == 0) {
+void removalInRow (CMat grid, const CPosition & pos, unsigned howMany)
+{
+    const unsigned N = grid.size();
+    if (pos.abs >= N || pos.ord >= N)
+    {
         return;
     }
-
-    // Le nombre réel d'éléments à supprimer ne peut pas dépasser
-    // le nombre d'éléments restants dans la colonne à partir de pos.ord.
-    unsigned actualRemoval = std::min((unsigned)(numRows - pos.ord), howMany);
-
-    // --- Suppression et remontée des éléments ---
-
-    // La colonne concernée est pos.abs (désormais 'col')
-    unsigned col = pos.abs;
-    // La ligne de départ est pos.ord (désormais 'startRow')
-    unsigned startRow = pos.ord;
-
-    // L'idée est de décaler les éléments de la colonne :
-    // Les éléments situés entre startRow + actualRemoval et numRows - 1
-    // sont déplacés vers les positions startRow à (numRows - 1) - actualRemoval.
-
-    // 3. Remonter les éléments au-dessus du bloc supprimé
-    for (unsigned r = startRow; r < numRows - actualRemoval; ++r) {
-        // La nouvelle valeur à la ligne 'r' est celle qui se trouvait
-        // 'actualRemoval' lignes plus bas.
-        grid[r][col] = grid[r + actualRemoval][col];
+    const unsigned row = pos.ord;
+    const unsigned start_col = pos.abs;
+    const unsigned end_col = start_col + howMany;
+    for (unsigned i = end_col; i < N; ++i)
+    {
+        unsigned target_col = i - howMany;
+        grid[row][target_col] = grid[row][i];
     }
-
-    //
-
-    // 4. Compléter les 'actualRemoval' dernières lignes avec KImpossible
-    // Ces lignes sont les dernières de la colonne, de (numRows - actualRemoval) à (numRows - 1).
-    unsigned fillStartRow = numRows - actualRemoval;
-
-    for (unsigned r = fillStartRow; r < numRows; ++r) {
-        grid[r][col] = KImpossible;
+    for (unsigned i = N - howMany; i < N; ++i)
+    {
+        grid[row][i] = KImpossible;
     }
 }
 
 int main()
 {
+    // Initialisation
+    srand(time(0));
     cout << "\033[30m\033[47m";
     clearScreen();
+
     unsigned KNbCandies;
     cout << "Entrer le nombre de bonbons différents : ";
     cin >> KNbCandies;
+
     unsigned Size;
     cout << "Entrer la taille de votre tableau : ";
     cin >> Size;
+
     CMat Grid;
     InitGrid(Grid, Size, KNbCandies);
-    DisplayGrid(Grid, KNbCandies);
-    CPosition Pos;
-    char Direction;
-    cout << "Entrer la ligne de l'élément qui va changer : ";
-    cin >> Pos.abs;
-    cout << "Entrer la colonne de l'élément qui va changer : ";
-    cin >> Pos.ord;
-    cout << "Entrer la direction que va prendre l'élément : ";
-    cin >> Direction;
-    MakeAMove(Grid, Pos, Direction);
-    DisplayGrid(Grid, KNbCandies);
-    couleur (KReset);
-    cout << "Retour à la normale" << endl;
+
+    // Variables de jeu
+    const int MAX_COUPS (20);
+    int coups_restants (MAX_COUPS);
+    unsigned long long score (0);
+
+    CPosition pos_saisie;
+    char direction_saisie;
+    CPosition pos_match;
+    unsigned howMany_match;
+
+    // Boucle de jeu (Tant qu'on n'a pas atteint le nombre maximal de coups)
+    while (coups_restants > 0)
+    {
+        clearScreen();
+
+        // Afficher l'état
+        cout << "--- COUPS RESTANTS : " << coups_restants << " | SCORE : " << score << " ---\n";
+
+        DisplayGrid(Grid);
+
+        // Menu et Saisie (Rafael : je vais l'implmenter)
+        // La fonction saisirCoup affiche le menu et lit les entrées
+        if (!saisirCoup(Size, pos_saisie, direction_saisie))
+        {
+            // Si la saisie échoue (ex: mauvaise direction, coordonnées hors limites)
+            cout << "Saisie invalide. Réessayez.\n";
+            continue;
+        }
+
+        // 1. Faire un coup
+        MakeAMove(Grid, pos_saisie, direction_saisie);
+
+        bool match_trouve = false;
+
+        // 2. Détection et Suppression
+        do
+        {
+            match_trouve = false;
+
+            // a) Test en Colonne
+            if (atLeastThreeInAColumn(Grid, pos_match, howMany_match))
+            {
+                removalInColumn(Grid, pos_match, howMany_match);
+                score += calculateScore(howMany_match);
+                match_trouve = true;
+            }
+
+            // b) Test en Ligne
+            if (atLeastThreeInARow(Grid, pos_match, howMany_match))
+            {
+                removalInRow(Grid, pos_match, howMany_match);
+                score += calculateScore(howMany_match);
+                match_trouve = true;
+            }
+
+            // Si un match a été fait, on l'affiche et on continue la boucle pour voir si les nouvelles positions (KImpossible) ont créé de nouveaux matches
+            if (match_trouve)
+            {
+                cout << "\nMatch trouve ! Score mis a jour : " << score << "\n";
+                DisplayGrid(Grid);
+                // Pause pour que l'utilisateur voie la suppression
+                cout << "Jeu mis en pause. Appuyer sur entrée pour continuer.";
+                cin.get();
+            }
+        } while (match_trouve); // Tant qu'il y a des réactions en chaîne
+
+        // 3. Mise à jour du nombre de coups
+        coups_restants--;c
+        // Gestion des cas où le coup n'a produit aucun match
+        if (!match_trouve)
+        {
+            // a) Déterminer la direction inverse
+            char direction_inverse = getInverseDirection(direction_saisie);
+            // b) Annuler le déplacement (Remettre les éléments en place)
+            MakeAMove(Grid, pos_saisie, direction_inverse);
+            cout << "ÉCHEC : Pas de Match créé. Annulation du déplacement.\n";
+        }
+    }
+
+    // Affichage du score final
     clearScreen();
+    cout << "\n##########################################\n";
+    cout << "# FIN DE PARTIE ! Le nombre de coups est atteint.\n";
+    cout << "# Votre Score Final est : " << score << "\n";
+    cout << "##########################################\n";
+
+    return 0;
 }
