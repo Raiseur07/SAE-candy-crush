@@ -1,0 +1,262 @@
+\doxysection{main.\+cpp File Reference}
+\hypertarget{main_8cpp}{}\label{main_8cpp}\index{main.cpp@{main.cpp}}
+
+
+Implémentation jeu type Candy Crush.  
+
+
+{\ttfamily \#include $<$iostream$>$}\newline
+{\ttfamily \#include $<$vector$>$}\newline
+{\ttfamily \#include $<$iomanip$>$}\newline
+\doxysubsubsection*{Classes}
+\begin{DoxyCompactItemize}
+\item 
+struct \mbox{\hyperlink{struct_c_position}{CPosition}}
+\begin{DoxyCompactList}\small\item\em Structure qui représente une position dans la grille du jeu Crée et type les variables abs et ord. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\doxysubsubsection*{Typedefs}
+\begin{DoxyCompactItemize}
+\item 
+typedef vector$<$ unsigned $>$ \mbox{\hyperlink{main_8cpp_afdda3c83e2e6eafed967564161b6695f}{CVLine}}
+\begin{DoxyCompactList}\small\item\em Type représentant une ligne de la grille. \end{DoxyCompactList}\item 
+typedef vector$<$ \mbox{\hyperlink{main_8cpp_afdda3c83e2e6eafed967564161b6695f}{CVLine}} $>$ \mbox{\hyperlink{main_8cpp_a5cac0dda561d27322ab297c165118829}{CMat}}
+\begin{DoxyCompactList}\small\item\em Type représentant la grille entière de ce jeu. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\doxysubsubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+\Hypertarget{main_8cpp_a63a18a31ab7815ab0d4eb5c133e5d1a5}\label{main_8cpp_a63a18a31ab7815ab0d4eb5c133e5d1a5} 
+const unsigned {\bfseries KReset} (0)
+\item 
+\Hypertarget{main_8cpp_a2ce1342a3c5061b4504256f7ac7cfda6}\label{main_8cpp_a2ce1342a3c5061b4504256f7ac7cfda6} 
+const unsigned {\bfseries KNoir} (30)
+\item 
+\Hypertarget{main_8cpp_a87aab004c1c22814beb8db1ddaa9f628}\label{main_8cpp_a87aab004c1c22814beb8db1ddaa9f628} 
+const unsigned {\bfseries KRouge} (31)
+\item 
+\Hypertarget{main_8cpp_a72260f87613d24d0cd1e7c8f646ca5f5}\label{main_8cpp_a72260f87613d24d0cd1e7c8f646ca5f5} 
+const unsigned {\bfseries KVert} (32)
+\item 
+\Hypertarget{main_8cpp_a1b010b9694f3acc35b02b0a667d99094}\label{main_8cpp_a1b010b9694f3acc35b02b0a667d99094} 
+const unsigned {\bfseries KJaune} (33)
+\item 
+\Hypertarget{main_8cpp_a587a099b5228e39c74a525cb4ac5d786}\label{main_8cpp_a587a099b5228e39c74a525cb4ac5d786} 
+const unsigned {\bfseries KBleu} (34)
+\item 
+\Hypertarget{main_8cpp_a1295d80e3fdb251b7969f86740392db4}\label{main_8cpp_a1295d80e3fdb251b7969f86740392db4} 
+const unsigned {\bfseries KMAgenta} (35)
+\item 
+\Hypertarget{main_8cpp_aed31d4db92c112edda1291acad69dd00}\label{main_8cpp_aed31d4db92c112edda1291acad69dd00} 
+const unsigned {\bfseries KCyan} (36)
+\item 
+void \mbox{\hyperlink{main_8cpp_a9d7e8af417b6d543da691e9c0e2f6f9f}{clear\+Screen}} ()
+\begin{DoxyCompactList}\small\item\em Effacer l\textquotesingle{}écran du terminal. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{main_8cpp_ae241cf89d39423f89bb8e65688e4c031}{couleur}} (const unsigned \&coul)
+\begin{DoxyCompactList}\small\item\em Change la couleur du texte dans le terminal. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{main_8cpp_a7efecc2f42d77bccc79e23a97241ff9c}{Init\+Grid}} (\mbox{\hyperlink{main_8cpp_a5cac0dda561d27322ab297c165118829}{CMat}} \&Grid, unsigned Size, const unsigned KNb\+Candies)
+\begin{DoxyCompactList}\small\item\em Initialisation grille de jeu avec bonbons aléatoires. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{main_8cpp_a474961cadbbbd535b65923576df38835}{Display\+Grid}} (const \mbox{\hyperlink{main_8cpp_a5cac0dda561d27322ab297c165118829}{CMat}} \&Grid, const unsigned \&KNb\+Candies)
+\begin{DoxyCompactList}\small\item\em Affiche la grille de jeu dans le terminal. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{main_8cpp_a2a25c880e76f160682e824222e33d5ac}{Make\+AMove}} (\mbox{\hyperlink{main_8cpp_a5cac0dda561d27322ab297c165118829}{CMat}} \&Grid, const \mbox{\hyperlink{struct_c_position}{CPosition}} \&Pos, const char \&Direction)
+\begin{DoxyCompactList}\small\item\em Permet un déplacement dans la grille. \end{DoxyCompactList}\item 
+bool \mbox{\hyperlink{main_8cpp_ac915dbe84eb8828a1752b780367ebbce}{at\+Least\+Three\+In\+AColumn}} (const \mbox{\hyperlink{main_8cpp_a5cac0dda561d27322ab297c165118829}{CMat}} \&grid, \mbox{\hyperlink{struct_c_position}{CPosition}} \&pos, unsigned \&how\+Many)
+\begin{DoxyCompactList}\small\item\em Fonction qui vérifie si il y a au moins 3 bonbons identiques qui se suivent dans une même collone. \end{DoxyCompactList}\item 
+bool \mbox{\hyperlink{main_8cpp_a172e753dba6c7406f2d1980c717f01c9}{at\+Least\+Three\+In\+ARow}} (const \mbox{\hyperlink{main_8cpp_a5cac0dda561d27322ab297c165118829}{CMat}} \&grid, \mbox{\hyperlink{struct_c_position}{CPosition}} \&pos, unsigned \&how\+Many)
+\begin{DoxyCompactList}\small\item\em Fonction qui vérifie si il y a au moins 3 bonbons identiques qui se suivent dans une même ligne. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{main_8cpp_a4ad87ec3a96e07ac5000e8e4e38ece6f}{removal\+In\+Column}} (mat \&grid, const ma\+Position \&pos, unsigned how\+Many)
+\begin{DoxyCompactList}\small\item\em Supprime une séquence verticale de bonbons. \end{DoxyCompactList}\item 
+\Hypertarget{main_8cpp_ae66f6b31b5ad750f1fe042a706a4e3d4}\label{main_8cpp_ae66f6b31b5ad750f1fe042a706a4e3d4} 
+int {\bfseries main} ()
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+Implémentation jeu type Candy Crush. 
+
+\begin{DoxyAuthor}{Author}
+Mefautvosnoms (nosadresse@mail) 
+\end{DoxyAuthor}
+\begin{DoxyVersion}{Version}
+1.\+0 
+\end{DoxyVersion}
+\begin{DoxyDate}{Date}
+03/01/2026 
+\end{DoxyDate}
+
+
+\label{doc-typedef-members}
+\Hypertarget{main_8cpp_doc-typedef-members}
+\doxysubsection{Typedef Documentation}
+\Hypertarget{main_8cpp_a5cac0dda561d27322ab297c165118829}\index{main.cpp@{main.cpp}!CMat@{CMat}}
+\index{CMat@{CMat}!main.cpp@{main.cpp}}
+\doxysubsubsection{\texorpdfstring{CMat}{CMat}}
+{\footnotesize\ttfamily \label{main_8cpp_a5cac0dda561d27322ab297c165118829} 
+typedef vector$<$\mbox{\hyperlink{main_8cpp_afdda3c83e2e6eafed967564161b6695f}{CVLine}}$>$ \mbox{\hyperlink{main_8cpp_a5cac0dda561d27322ab297c165118829}{CMat}}}
+
+
+
+Type représentant la grille entière de ce jeu. 
+
+\doxylink{main_8cpp_a5cac0dda561d27322ab297c165118829}{CMat} est un vecteur de \doxylink{main_8cpp_afdda3c83e2e6eafed967564161b6695f}{CVLine} (matrice 2D). \Hypertarget{main_8cpp_afdda3c83e2e6eafed967564161b6695f}\index{main.cpp@{main.cpp}!CVLine@{CVLine}}
+\index{CVLine@{CVLine}!main.cpp@{main.cpp}}
+\doxysubsubsection{\texorpdfstring{CVLine}{CVLine}}
+{\footnotesize\ttfamily \label{main_8cpp_afdda3c83e2e6eafed967564161b6695f} 
+typedef vector$<$unsigned$>$ \mbox{\hyperlink{main_8cpp_afdda3c83e2e6eafed967564161b6695f}{CVLine}}}
+
+
+
+Type représentant une ligne de la grille. 
+
+Un \doxylink{main_8cpp_afdda3c83e2e6eafed967564161b6695f}{CVLine} est un vecteur d\textquotesingle{}entiers naturel où chaque élément représente un type (couleur) de bonbon. 
+
+\label{doc-func-members}
+\Hypertarget{main_8cpp_doc-func-members}
+\doxysubsection{Function Documentation}
+\Hypertarget{main_8cpp_ac915dbe84eb8828a1752b780367ebbce}\index{main.cpp@{main.cpp}!atLeastThreeInAColumn@{atLeastThreeInAColumn}}
+\index{atLeastThreeInAColumn@{atLeastThreeInAColumn}!main.cpp@{main.cpp}}
+\doxysubsubsection{\texorpdfstring{atLeastThreeInAColumn()}{atLeastThreeInAColumn()}}
+{\footnotesize\ttfamily \label{main_8cpp_ac915dbe84eb8828a1752b780367ebbce} 
+bool at\+Least\+Three\+In\+AColumn (\begin{DoxyParamCaption}\item[{const \mbox{\hyperlink{main_8cpp_a5cac0dda561d27322ab297c165118829}{CMat}} \&}]{grid}{, }\item[{\mbox{\hyperlink{struct_c_position}{CPosition}} \&}]{pos}{, }\item[{unsigned \&}]{how\+Many}{}\end{DoxyParamCaption})}
+
+
+
+Fonction qui vérifie si il y a au moins 3 bonbons identiques qui se suivent dans une même collone. 
+
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\texttt{in}}  & {\em grid} & Grille \\
+\hline
+\mbox{\texttt{out}}  & {\em pos} & Position du premier bonbon \\
+\hline
+\mbox{\texttt{out}}  & {\em how\+Many} & Nombre de bonbons\\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+true si une séquence a 3 bonbons qui se suivent dans la même collone sinon false 
+\end{DoxyReturn}
+\Hypertarget{main_8cpp_a172e753dba6c7406f2d1980c717f01c9}\index{main.cpp@{main.cpp}!atLeastThreeInARow@{atLeastThreeInARow}}
+\index{atLeastThreeInARow@{atLeastThreeInARow}!main.cpp@{main.cpp}}
+\doxysubsubsection{\texorpdfstring{atLeastThreeInARow()}{atLeastThreeInARow()}}
+{\footnotesize\ttfamily \label{main_8cpp_a172e753dba6c7406f2d1980c717f01c9} 
+bool at\+Least\+Three\+In\+ARow (\begin{DoxyParamCaption}\item[{const \mbox{\hyperlink{main_8cpp_a5cac0dda561d27322ab297c165118829}{CMat}} \&}]{grid}{, }\item[{\mbox{\hyperlink{struct_c_position}{CPosition}} \&}]{pos}{, }\item[{unsigned \&}]{how\+Many}{}\end{DoxyParamCaption})}
+
+
+
+Fonction qui vérifie si il y a au moins 3 bonbons identiques qui se suivent dans une même ligne. 
+
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\texttt{in}}  & {\em grid} & Grille \\
+\hline
+\mbox{\texttt{out}}  & {\em pos} & Position du premier bonbon \\
+\hline
+\mbox{\texttt{out}}  & {\em how\+Many} & Nombre de bonbons\\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+true si une séquence a 3 bonbons qui se suivent dans la même ligne sinon false 
+\end{DoxyReturn}
+\Hypertarget{main_8cpp_a9d7e8af417b6d543da691e9c0e2f6f9f}\index{main.cpp@{main.cpp}!clearScreen@{clearScreen}}
+\index{clearScreen@{clearScreen}!main.cpp@{main.cpp}}
+\doxysubsubsection{\texorpdfstring{clearScreen()}{clearScreen()}}
+{\footnotesize\ttfamily \label{main_8cpp_a9d7e8af417b6d543da691e9c0e2f6f9f} 
+void clear\+Screen (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})}
+
+
+
+Effacer l\textquotesingle{}écran du terminal. 
+
+Suite de caractère permettant d\textquotesingle{}effacer le contenu du terminal \Hypertarget{main_8cpp_ae241cf89d39423f89bb8e65688e4c031}\index{main.cpp@{main.cpp}!couleur@{couleur}}
+\index{couleur@{couleur}!main.cpp@{main.cpp}}
+\doxysubsubsection{\texorpdfstring{couleur()}{couleur()}}
+{\footnotesize\ttfamily \label{main_8cpp_ae241cf89d39423f89bb8e65688e4c031} 
+void couleur (\begin{DoxyParamCaption}\item[{const unsigned \&}]{coul}{}\end{DoxyParamCaption})}
+
+
+
+Change la couleur du texte dans le terminal. 
+
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\texttt{in}}  & {\em coul} & Code couleur qui doot être appliqués\\
+\hline
+\end{DoxyParams}
+le code couleur est celui défini plus haut \+:~\newline
+(KReset, KBleu,Kjaune, etc...) \Hypertarget{main_8cpp_a474961cadbbbd535b65923576df38835}\index{main.cpp@{main.cpp}!DisplayGrid@{DisplayGrid}}
+\index{DisplayGrid@{DisplayGrid}!main.cpp@{main.cpp}}
+\doxysubsubsection{\texorpdfstring{DisplayGrid()}{DisplayGrid()}}
+{\footnotesize\ttfamily \label{main_8cpp_a474961cadbbbd535b65923576df38835} 
+void Display\+Grid (\begin{DoxyParamCaption}\item[{const \mbox{\hyperlink{main_8cpp_a5cac0dda561d27322ab297c165118829}{CMat}} \&}]{Grid}{, }\item[{const unsigned \&}]{KNb\+Candies}{}\end{DoxyParamCaption})}
+
+
+
+Affiche la grille de jeu dans le terminal. 
+
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\texttt{in}}  & {\em Grid} & Grille \\
+\hline
+\mbox{\texttt{in}}  & {\em KNb\+Candies} & Nombre de types de bonbons différents\\
+\hline
+\end{DoxyParams}
+Chaque bonbon est affiché avec une largeur de 3 caractères. Les valeurs impossibles (0 ou \texorpdfstring{$>$}{>} KNb\+Candies) sont considérés comme des espaces. \Hypertarget{main_8cpp_a7efecc2f42d77bccc79e23a97241ff9c}\index{main.cpp@{main.cpp}!InitGrid@{InitGrid}}
+\index{InitGrid@{InitGrid}!main.cpp@{main.cpp}}
+\doxysubsubsection{\texorpdfstring{InitGrid()}{InitGrid()}}
+{\footnotesize\ttfamily \label{main_8cpp_a7efecc2f42d77bccc79e23a97241ff9c} 
+void Init\+Grid (\begin{DoxyParamCaption}\item[{\mbox{\hyperlink{main_8cpp_a5cac0dda561d27322ab297c165118829}{CMat}} \&}]{Grid}{, }\item[{unsigned}]{Size}{, }\item[{const unsigned}]{KNb\+Candies}{}\end{DoxyParamCaption})}
+
+
+
+Initialisation grille de jeu avec bonbons aléatoires. 
+
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\texttt{out}}  & {\em Grid} & Grille \\
+\hline
+\mbox{\texttt{in}}  & {\em Size} & Taille de la grille (Size x Size) \\
+\hline
+\mbox{\texttt{in}}  & {\em KNb\+Candies} & Nombre de types de bonbons différents\\
+\hline
+\end{DoxyParams}
+La fonction crée une grille carrée de taille Size (Size est un entier naturel) \Hypertarget{main_8cpp_a2a25c880e76f160682e824222e33d5ac}\index{main.cpp@{main.cpp}!MakeAMove@{MakeAMove}}
+\index{MakeAMove@{MakeAMove}!main.cpp@{main.cpp}}
+\doxysubsubsection{\texorpdfstring{MakeAMove()}{MakeAMove()}}
+{\footnotesize\ttfamily \label{main_8cpp_a2a25c880e76f160682e824222e33d5ac} 
+void Make\+AMove (\begin{DoxyParamCaption}\item[{\mbox{\hyperlink{main_8cpp_a5cac0dda561d27322ab297c165118829}{CMat}} \&}]{Grid}{, }\item[{const \mbox{\hyperlink{struct_c_position}{CPosition}} \&}]{Pos}{, }\item[{const char \&}]{Direction}{}\end{DoxyParamCaption})}
+
+
+
+Permet un déplacement dans la grille. 
+
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\texttt{in,out}}  & {\em Grid} & Grille \\
+\hline
+\mbox{\texttt{in}}  & {\em Pos} & Position du bonbon à déplacer \\
+\hline
+\mbox{\texttt{in}}  & {\em Direction} & Direction du déplacement\\
+\hline
+\end{DoxyParams}
+Les directions possibles sont \+: \textquotesingle{}Z\textquotesingle{} ou \textquotesingle{}z\textquotesingle{} \+: vers le haut \textquotesingle{}S\textquotesingle{} ou \textquotesingle{}s\textquotesingle{} \+: vers le bas \textquotesingle{}Q\textquotesingle{} ou \textquotesingle{}q\textquotesingle{} \+: vers la gauche \textquotesingle{}D\textquotesingle{} ou \textquotesingle{}d\textquotesingle{} \+: vers la droite
+
+\begin{DoxyWarning}{Warning}
+Si la position est invalide ou la direction impossible, aucun changement ne sera effectué 
+\end{DoxyWarning}
+\Hypertarget{main_8cpp_a4ad87ec3a96e07ac5000e8e4e38ece6f}\index{main.cpp@{main.cpp}!removalInColumn@{removalInColumn}}
+\index{removalInColumn@{removalInColumn}!main.cpp@{main.cpp}}
+\doxysubsubsection{\texorpdfstring{removalInColumn()}{removalInColumn()}}
+{\footnotesize\ttfamily \label{main_8cpp_a4ad87ec3a96e07ac5000e8e4e38ece6f} 
+void removal\+In\+Column (\begin{DoxyParamCaption}\item[{mat \&}]{grid}{, }\item[{const ma\+Position \&}]{pos}{, }\item[{unsigned}]{how\+Many}{}\end{DoxyParamCaption})}
+
+
+
+Supprime une séquence verticale de bonbons. 
+
+
+\begin{DoxyParams}[1]{Parameters}
+\mbox{\texttt{in,out}}  & {\em grid} & Grille \\
+\hline
+\mbox{\texttt{in}}  & {\em pos} & Position du premier bonbon à supprimer \\
+\hline
+\mbox{\texttt{in}}  & {\em how\+Many} & Nombre de bonbons à supprimer\\
+\hline
+\end{DoxyParams}
+La fonction supprime le nombre spécifié dans \textquotesingle{}How\+Many\textquotesingle{} bonbons dans la colonne spécifiée, puis fait monter les bonbons au-\/dessus pour combler l\textquotesingle{}espace vide de la grille. 
