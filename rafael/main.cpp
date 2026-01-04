@@ -17,7 +17,6 @@ const unsigned KBleu    (34);
 const unsigned KMAgenta (35);
 const unsigned KCyan    (36);
 const unsigned KImpossible (0);
-unsigned combo = 1;
 
 void clearScreen () {
     cout << "\033[H\033[2J";
@@ -313,6 +312,7 @@ int main()
         MakeAMove(Grid, pos_saisie, direction_saisie);
 
         bool match_trouve = false;
+//unsigned combo = 1;
 
         // 2. Détection et Suppression
         do
@@ -322,9 +322,13 @@ int main()
             // a) Test en Colonne
             if (atLeastThreeInAColumn(Grid, pos_match, howMany_match))
             {
+//unsigned points = calculateScore(howMany_match) * combo;
+//score += points;
                 removalInColumn(Grid, pos_match, howMany_match);
-                score += calculateScore(howMany_match);
+                score += calculateScore(howMany_match); 
+
                 match_trouve = true;
+//combo++
             }
 
             // b) Test en Ligne
@@ -338,6 +342,8 @@ int main()
             // Si un match a été fait, on l'affiche et on continue la boucle pour voir si les nouvelles positions (KImpossible) ont créé de nouveaux matches
             if (match_trouve)
             {
+// cout << "\n🔥 COMBO x" << combo - 1 << " !";
+//cout << "  Score : " << score << "\n";
                 cout << "\nMatch trouve ! Score mis a jour : " << score << "\n";
                 DisplayGrid(Grid);
                 // Pause pour que l'utilisateur voie la suppression
