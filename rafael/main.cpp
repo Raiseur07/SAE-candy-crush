@@ -1,376 +1,814 @@
 #include <iostream>
 #include <vector>
-#include <iomanip>
+#include <cstdlib>
+#include <ctime>
+#include <algorithm>
+#include <limits>
+#include <string>
+#include <fstream>
+
 using namespace std;
-typedef vector <unsigned> CVLine; // un type représentant une ligne de la grille
-typedef vector <CVLine> CMat; // un type représentant la grille
-struct CPosition {
+
+// --- 1. LES DEFINITIONS ET LES CONSTANTES ---
+
+// Constantes pour les couleurs de terminal
+const unsigned KReset (0);
+const unsigned KNoir (30);
+const unsigned KRouge (31);
+const unsigned KRVert (32);
+const unsigned KJaune (33);
+const unsigned KBleu (34);
+
+// Constantes pour le fond et le texte par défaut (Noir sur Fond Blanc)
+const unsigned KBG_White (47);
+const unsigned KTEXT_Black (30);
+
+// Constantes de Jeu
+const unsigned KNbCandies (4);  // Types de bonbons (limité à 4)
+const unsigned KGridSize (8);   // Taille de la grille N x N (8x8)
+const unsigned KImpossible (0); // Valeur pour les cases vides/supprimées
+
+// Objectifs des modes
+const unsigned KMaxMoves (20);      // Nombre maximal de coups (Mode Classique)
+const unsigned KTimeLimit (60);     // Limite de temps pour le Mode Contre-la-montre (secondes)
+const unsigned KTargetScore (1000); // Score à atteindre (Mode Cible)
+
+// Save file names
+const string KFileScoresClassic = "scores_classique.txt";
+const string KFileScoresTimeTrial = "scores_clm.txt";
+const string KFileScoresTarget = "scores_cible.txt";
+
+// absors and symbols
+const unsigned CANDY_absORS[] = {KReset, KRouge, KRVert, KBleu, KJaune};
+const char CANDY_SYMBOLS[] = {' ', '1', '2', '3', '4', '5', '6', '7'};
+
+// Type aliases
+typedef vector <unsigned> line; // un type représentant une ligne de la grille
+typedef vector <line> mat; // un type représentant la grille
+struct maPosition {
     unsigned abs;
     unsigned ord;
 }; // une position dans la girlle
-const unsigned KReset   (0);
-const unsigned KNoir    (30);
-const unsigned KRouge   (31);
-const unsigned KVert    (32);
-const unsigned KJaune   (33);
-const unsigned KBleu    (34);
-const unsigned KMAgenta (35);
-const unsigned KCyan    (36);
-const unsigned KImpossible (0);
 
-void clearScreen () {
-    cout << "\033[H\033[2J";
-}
+// Structure pour les modes Classique et Contre-la-montre (Score élevé = meilleur)
+struct ScoreEntry {
+    string pseudo;
+    unsigned score;
+};
+
+// Structure pour le mode Cible (Coups faibles = meilleur)
+struct TargetScoreEntry { // NOUVEAU
+    string pseudo;
+    unsigned moves;
+};
+
+
+// --- 2. LES FONCTIONS POUR LE TERMINAL ---
 
 void couleur (const unsigned & coul) {
     cout << "\033[" << coul <<"m";
 }
 
-// Fonction de pour sortir le n-ième nombre de la suite de Fibonacci (source : https://www.delftstack.com/fr/howto/cpp/fibonacci-sequence-in-cpp/)
-unsigned long long generateFibonacci(unsigned long long n) {
-    if (n == 1) {
-        return 0;
-    } else if (n == 2 || n == 3) {
-        return 1;
-    }
-
-    unsigned long long a = 1;
-    unsigned long long b = 1;
-    unsigned long long c;
-
-    for (unsigned long long i = 3; i < n; ++i) {
-        c = a + b;
-        a = b;
-        b = c;
-    }
-
-    return c;
+void initializeBackground() {
+    couleur(KTEXT_Black);
+    couleur(KBG_White);
 }
 
-int calculateScore(unsigned howMany) {
-    if (howMany < 3)
-    {
-        return 0;
-    }
-    const int multiplicateur = 100;
-    unsigned long long fib_term = generateFibonacci(howMany + 1);
-    return (fib_term * multiplicateur);
+void clearScreen () {
+    initializeBackground();
+    cout << "\033[H\033[2J";
 }
 
-bool saisirCoup(unsigned N, CPosition & pos, char & direction) {
-    cout << "\nMenu : Z, S, Q, D (Direction)\n";
-    cout << "Entrez Ligne (ord) et Colonne (abs) du bonbon a deplacer: ";
-    if (!(cin >> pos.ord >> pos.abs)) return false;
-
-    cout << "Entrez la direction (Z/S/Q/D) : ";
-    if (!(cin >> direction)) return false;
-
-    if (pos.ord >= N || pos.abs >= N) return false;
-
-    return true;
-}
-
-void InitGrid(CMat & Grid, unsigned Size, const unsigned KNbCandies)
-{
-    Grid.resize(Size, CVLine(Size));
-    for (unsigned i = 0; i < Size; ++i)
-    {
-        for (unsigned j = 0; j < Size; ++j)
-        {
-            Grid[i][j] = 1 + rand() % KNbCandies;
-        }
-    }
-}
-
-void  DisplayGrid (const CMat & Grid)
-{
-    for (const CVLine & uneLigne : Grid)
-    {
-        for (const unsigned & uneCel : uneLigne)
-        {
-            if (uneCel == KImpossible)
-            {
-                cout << " ";
-            }
-            else
-            {
-                cout << setw(3) << uneCel;
-            }
-        }
-        cout << endl;
-    }
-}
-
-void MakeAMove (CMat & Grid, const CPosition & Pos, const char & Direction)
-{
-    unsigned i = Pos.ord;
-    unsigned j = Pos.abs;
-    unsigned n = Grid.size();
-    if (i >= n || j >= n) return;
-    if ((Direction == 'Z' || Direction == 'z') && i > 0)
-    {
-        swap(Grid[i][j], Grid[i-1][j]);
-    }
-    else if ((Direction == 'S' || Direction == 's') && i < n-1)
-    {
-        swap(Grid[i][j], Grid[i+1][j]);
-    }
-    else if ((Direction == 'Q' || Direction == 'q') && j > 0)
-    {
-        swap(Grid[i][j], Grid[i][j-1]);
-    }
-    else if ((Direction == 'D' || Direction == 'd') && j < n-1)
-    {
-        swap(Grid[i][j], Grid[i][j+1]);
-    }
-}
-
-char getInverseDirection(char Direction)
-{
-    char dir = toupper(Direction);
-    if (dir == 'Z') return 'S';
-    if (dir == 'S') return 'Z';
-    if (dir == 'Q') return 'D';
-    if (dir == 'D') return 'Q';
-    return Direction;
-}
-
-bool atLeastThreeInAColumn (const CMat & grid, CPosition & pos, unsigned & howMany) {
-    const unsigned N = grid.size();
-    for (unsigned col = 0; col < N; ++col)
-    {
-        unsigned count = 1;
-        unsigned start_row = 0;
-        for (unsigned row = 0; row < N - 1; ++row)
-        {
-            if (grid[row][col] == KImpossible)
-            {
-                count = 1;
-                start_row = row + 1;
-                continue;
-            }
-
-            if (grid[row][col] == grid[row + 1][col]) {
-                count++;
-            }
-            else
-            {
-                if (count >= 3)
-                {
-                    pos.ord = start_row;
-                    pos.abs = col;
-                    howMany = count;
-                    return true;
-                }
-                count = 1;
-                start_row = row + 1;
-            }
-        }
-        if (count >= 3)
-        {
-            pos.ord = start_row;
-            pos.abs = col;
-            howMany = count;
-            return true;
-        }
-    }
-    return false;
-}
-
-bool atLeastThreeInARow (const CMat & grid, CPosition & pos, unsigned & howMany) {
-    const unsigned N = grid.size();
-    for (unsigned row = 0; row < N; ++row)
-    {
-        unsigned count = 1;
-        unsigned start_col = 0;
-        for (unsigned col = 0; col < N - 1; ++col)
-        {
-            if (grid[row][col] == KImpossible)
-            {
-                count = 1;
-                start_col = col + 1;
-                continue;
-            }
-            if (grid[row][col] == grid[row][col + 1])
-            {
-                count++;
-            }
-            else
-            {
-                if (count >= 3)
-                {
-                    pos.ord = row;
-                    pos.abs = start_col;
-                    howMany = count;
-                    return true;
-                }
-                count = 1;
-                start_col = col + 1;
-            }
-        }
-        if (count >= 3)
-        {
-            pos.ord = row;
-            pos.abs = start_col;
-            howMany = count;
-            return true;
-        }
-    }
-    return false;
-}
-
-void removalInColumn (CMat & grid, const CPosition & pos, unsigned howMany)
-{
-    const unsigned N = grid.size();
-    if (pos.ord >= N || pos.abs >= N)
-    {
-        return;
-    }
-    const unsigned col = pos.abs;
-    const unsigned start_row = pos.ord;
-    const unsigned end_row = start_row + howMany;
-    for (unsigned i = end_row; i < N; ++i)
-    {
-        unsigned target_row = i - howMany;
-        grid[target_row][col] = grid[i][col];
-    }
-    for (unsigned i = N - howMany; i < N; ++i)
-    {
-        grid[i][col] = KImpossible;
-    }
-}
-
-void removalInRow (CMat & grid, const CPosition & pos, unsigned howMany)
-{
-    const unsigned N = grid.size();
-    if (pos.abs >= N || pos.ord >= N)
-    {
-        return;
-    }
-    const unsigned row = pos.ord;
-    const unsigned start_col = pos.abs;
-    const unsigned end_col = start_col + howMany;
-    for (unsigned i = end_col; i < N; ++i)
-    {
-        unsigned target_col = i - howMany;
-        grid[row][target_col] = grid[row][i];
-    }
-    for (unsigned i = N - howMany; i < N; ++i)
-    {
-        grid[row][i] = KImpossible;
-    }
-}
-
-int main()
-{
-    // Initialisation
-    srand(time(0));
-    cout << "\033[30m\033[47m";
+/**
+ * @brief Affiche la grille dans le terminal.
+ */
+void displayGrid (const mat & grid, unsigned score) {
     clearScreen();
 
-    unsigned KNbCandies;
-    cout << "Entrer le nombre de bonbons différents : ";
-    cin >> KNbCandies;
+    couleur(KTEXT_Black);
+    cout << "   SCORE: " << score << endl;
+    cout << "     0 1 2 3 4 5 6 7" << endl;
+    cout << "    -----------------" << endl;
 
-    unsigned Size;
-    cout << "Entrer la taille de votre tableau : ";
-    cin >> Size;
+    for (unsigned i = 0; i < KGridSize; ++i) {
+        cout << " " << i << " | ";
+        for (unsigned j = 0; j < KGridSize; ++j) {
+            unsigned value = grid[i][j];
 
-    CMat Grid;
-    InitGrid(Grid, Size, KNbCandies);
+            if (value == KImpossible) {
+                couleur(KTEXT_Black);
+                cout << ". ";
+            } else if (value <= KNbCandies) {
+                couleur(CANDY_absORS[value]);
+                cout << CANDY_SYMBOLS[value] << " ";
+            } else {
+                couleur(KTEXT_Black);
+                cout << "? ";
+            }
+        }
+        couleur(KTEXT_Black);
+        cout << endl;
+    }
+    cout << "    -----------------" << endl;
+}
 
-    // Variables de jeu
-    const int MAX_COUPS (20);
-    int coups_restants (MAX_COUPS);
-    unsigned long long score (0);
 
-    CPosition pos_saisie;
-    char direction_saisie;
-    CPosition pos_match;
-    unsigned howMany_match;
+// --- 3. LES SCORES ---
 
-    // Boucle de jeu (Tant qu'on n'a pas atteint le nombre maximal de coups)
-    while (coups_restants > 0)
-    {
-        clearScreen();
+/**
+ * @brief Lit les entrées de score (ScoreEntry) depuis un fichier.
+ */
+vector<ScoreEntry> loadScores(const string & fileName) {
+    vector<ScoreEntry> scores;
+    ifstream file(fileName);
 
-        // Afficher l'état
-        cout << "--- COUPS RESTANTS : " << coups_restants << " | SCORE : " << score << " ---\n";
+    if (file.is_open()) {
+        ScoreEntry entry;
+        while (file >> entry.score >> entry.pseudo) {
+            scores.push_back(entry);
+        }
+        file.close();
+    }
+    return scores;
+}
 
-        DisplayGrid(Grid);
+/**
+ * @brief Lit les entrées de score du Mode Cible (TargetScoreEntry) depuis un fichier.
+ */
+vector<TargetScoreEntry> loadTargetScores(const string & fileName) {
+    vector<TargetScoreEntry> scores;
+    ifstream file(fileName);
 
-        // Menu et Saisie (Rafael : je vais l'implmenter)
-        // La fonction saisirCoup affiche le menu et lit les entrées
-        if (!saisirCoup(Size, pos_saisie, direction_saisie))
-        {
-            // Si la saisie échoue (ex: mauvaise direction, coordonnées hors limites)
-            cout << "Saisie invalide. Réessayez.\n";
+    if (file.is_open()) {
+        TargetScoreEntry entry;
+        while (file >> entry.moves >> entry.pseudo) {
+            scores.push_back(entry);
+        }
+        file.close();
+    }
+    return scores;
+}
+
+/**
+ * @brief Sauvegarde le vecteur d'entrées de score (ScoreEntry) dans un fichier.
+ */
+void saveScores(const string & fileName, const vector<ScoreEntry> & scores) {
+    ofstream file(fileName);
+
+    if (file.is_open()) {
+        for (const ScoreEntry & entry : scores) {
+            file << entry.score << " " << entry.pseudo << endl;
+        }
+        file.close();
+    } else {
+        cout << "Error: Cannot open save file " << fileName << endl;
+    }
+}
+
+/**
+ * @brief Sauvegarde le vecteur d'entrées de score du Mode Cible (TargetScoreEntry) dans un fichier.
+ */
+void saveTargetScores(const string & fileName, const vector<TargetScoreEntry>& scores) {
+    ofstream file(fileName);
+
+    if (file.is_open()) {
+        for (const TargetScoreEntry & entry : scores) {
+            file << entry.moves << " " << entry.pseudo << endl;
+        }
+        file.close();
+    } else {
+        cout << "Error: Cannot open save file " << fileName << endl;
+    }
+}
+
+/**
+ * @brief Affiche les meilleurs scores pour un mode donné.
+ */
+void displayBestScores(const string & modeName, const vector<ScoreEntry> & scores) {
+    couleur(KTEXT_Black);
+    cout << "\n--- Meilleurs scores (" << modeName << ") ---" << endl;
+    if (scores.empty()) {
+        cout << "Aucun score enregistre pour l'instant." << endl;
+    } else {
+        // Affiche max 10 scores
+        for (size_t i = 0; i < min((size_t)10, scores.size()); ++i) {
+            cout << i + 1 << ". " << scores[i].pseudo << " : " << scores[i].score << " points" << endl;
+        }
+    }
+    cout << "--------------------------------------" << endl;
+}
+
+/**
+ * @brief Affiche les meilleurs scores pour le Mode Cible (basé sur les coups).
+ */
+void displayBestTargetScores(const string & modeName, const vector<TargetScoreEntry> & scores) {
+    couleur(KTEXT_Black);
+    cout << "\n--- Classement (" << modeName << ") ---" << endl;
+    cout << "Objectif : " << KTargetScore << " points" << endl;
+    cout << "--------------------------------------" << endl;
+    if (scores.empty()) {
+        cout << "Aucun score enregistre pour l'instant." << endl;
+    } else {
+        // Affiche max 10 scores
+        for (size_t i = 0; i < min((size_t)10, scores.size()); ++i) {
+            cout << i + 1 << ". " << scores[i].pseudo << " : " << scores[i].moves << " coups" << endl;
+        }
+    }
+    cout << "--------------------------------------" << endl;
+}
+
+
+// --- 4. LES MATCHS ET LES MOUVEMENT ---
+
+/**
+ * @brief Regarde si il y a 3 ou plus de chiffres identiques après l'initialisation.
+ */
+bool checkInitialMatch(const mat & grid) {
+    for (unsigned i = 0; i < KGridSize; ++i) {
+        for (unsigned j = 0; j <= KGridSize - 3; ++j) {
+            unsigned type = grid[i][j];
+            if (type != KImpossible && type == grid[i][j+1] && type == grid[i][j+2]) return true;
+        }
+    }
+    for (unsigned j = 0; j < KGridSize; ++j) {
+        for (unsigned i = 0; i <= KGridSize - 3; ++i) {
+            unsigned type = grid[i][j];
+            if (type != KImpossible && type == grid[i+1][j] && type == grid[i+2][j]) return true;
+        }
+    }
+    return false;
+}
+
+/**
+ * @brief Initialise toutes les cellules de la grille avec des chiffres aléatoires, en recommençant si checkInitialMatch n'est pas respecté.
+ */
+void initGrid (mat & grid, const size_t & matSize) {
+    grid.resize(matSize, line(matSize));
+
+    do {
+        for (unsigned i = 0; i < matSize; ++i) {
+            for (unsigned j = 0; j < matSize; ++j) {
+                // Génère un nombre entre 1 et KNbCandies (4 max)
+                grid[i][j] = (rand() % KNbCandies) + 1;
+            }
+        }
+    } while (checkInitialMatch(grid));
+}
+
+/**
+ * @brief Enlève tout les bonbons sur les positions données, applique la gravtié et remplit avec de nouveaux bonbons.
+ */
+void removalInColumn (mat & grid, const maPosition & pos, unsigned howMany) {
+    unsigned abs = pos.abs;
+    unsigned startord = pos.ord;
+
+    for (unsigned i = startord; i < startord + howMany; ++i) {
+        if (i < KGridSize && grid[i][abs] != KImpossible) {
+            grid[i][abs] = KImpossible;
+        }
+    }
+
+    int next_write_ord = KGridSize - 1;
+
+    for (int i = KGridSize - 1; i >= 0; --i) {
+        if (grid[i][abs] != KImpossible) {
+            if (i != next_write_ord) {
+                grid[next_write_ord][abs] = grid[i][abs];
+                grid[i][abs] = KImpossible;
+            }
+            next_write_ord--;
+        }
+    }
+
+    for (unsigned i = 0; i < KGridSize; ++i) {
+        if (grid[i][abs] == KImpossible) {
+            grid[i][abs] = (rand() % KNbCandies) + 1;
+        }
+    }
+}
+
+/**
+ * @brief Enlève tout les bonbons sur les positions données et appelle removalInColumn pour qu'il s'occupe de la gravité et du remplissage de nouveaux bonbons.
+ */
+void removalInRow (mat & grid, const maPosition & pos, unsigned howMany) {
+    unsigned ord = pos.ord;
+    unsigned startabs = pos.abs;
+
+    for (unsigned j = startabs; j < startabs + howMany; ++j) {
+        if (j < KGridSize) {
+            grid[ord][j] = KImpossible;
+        }
+    }
+
+    for (unsigned j = startabs; j < startabs + howMany; ++j) {
+        if (j < KGridSize) {
+            maPosition tmpPos = {j, 0};
+            removalInColumn(grid, tmpPos, 0);
+        }
+    }
+}
+
+/**
+ * @brief Cherche pour un match vertical de 3 ou plus bonbons.
+ */
+bool atLeastThreeInAColumn (const mat & grid, maPosition & pos, unsigned & howMany) {
+    for (unsigned j = 0; j < KGridSize; ++j) {
+        for (unsigned i = 0; i <= KGridSize - 3; ++i) {
+            unsigned type = grid[i][j];
+            if (type == KImpossible) continue;
+
+            if (type == grid[i+1][j] && type == grid[i+2][j]) {
+                howMany = 3;
+                unsigned k = i + 3;
+                while (k < KGridSize && grid[k][j] == type) {
+                    howMany++;
+                    k++;
+                }
+                pos = {j, i};
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+/**
+ * @brief Cherche pour un match horizontal de 3 ou plus bonbons.
+ */
+bool atLeastThreeInARow (const mat & grid, maPosition & pos, unsigned & howMany) {
+    for (unsigned i = 0; i < KGridSize; ++i) {
+        for (unsigned j = 0; j <= KGridSize - 3; ++j) {
+            unsigned type = grid[i][j];
+            if (type == KImpossible) continue;
+
+            if (type == grid[i][j+1] && type == grid[i][j+2]) {
+                howMany = 3;
+                unsigned k = j + 3;
+                while (k < KGridSize && grid[i][k] == type) {
+                    howMany++;
+                    k++;
+                }
+                pos = {j, i};
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+/**
+ * @brief Echange les bonbons à une position donnée avec la direction donnée.
+ */
+void makeAMove (mat & grid, const maPosition & pos, const char & direction) {
+    unsigned r2 = pos.ord;
+    unsigned c2 = pos.abs;
+
+    switch (direction) {
+    case 'Q': // Gauche
+        if (pos.abs == 0) return;
+        c2 = pos.abs - 1;
+        break;
+    case 'Z': // Haut
+        if (pos.ord == 0) return;
+        r2 = pos.ord - 1;
+        break;
+    case 'D': // Droit
+        if (pos.abs == KGridSize - 1) return;
+        c2 = pos.abs + 1;
+        break;
+    case 'S': // Bas
+        if (pos.ord == KGridSize - 1) return;
+        r2 = pos.ord + 1;
+        break;
+    default:
+        return;
+    }
+
+    swap(grid[pos.ord][pos.abs], grid[r2][c2]);
+}
+
+
+// --- 5. LES MODES DE JEUX ---
+
+/**
+ * @brief Boucle principale pour le Mode Classique (Coups limités, Meilleur score).
+ */
+void runClassicMode(const string & userPseudo) {
+    mat grid;
+    initGrid(grid, KGridSize);
+
+    unsigned score = 0;
+    unsigned currentMoves = 0;
+    int r1, c1;
+    char direction;
+
+    cout << "--- Mode Classique: Meilleur score en " << KMaxMoves << " coups ---" << endl;
+
+    while (currentMoves < KMaxMoves) {
+        displayGrid(grid, score);
+        couleur(KTEXT_Black);
+        cout << "COUPS RESTANTS : " << KMaxMoves - currentMoves << " / " << KMaxMoves << endl;
+
+        // --- Saisie ---
+        cout << "\nEntrez la Ligne et la absonne du nombre a deplacer (ex: 0 0) : ";
+        if (!(cin >> r1 >> c1)) break;
+
+        if (r1 < 0 || r1 >= (int)KGridSize || c1 < 0 || c1 >= (int)KGridSize || grid[r1][c1] == KImpossible) {
+            std::cin.clear(); // Effacer les indicateurs d'erreur
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); // Ignorer l'entrée invalide
+            std::cout << "Entrée invalide. Veuillez réessayer.\n"; //source : https://labex.io/fr/tutorials/cpp-how-to-handle-cin-input-validation-427285
             continue;
         }
 
-        // 1. Faire un coup
-        MakeAMove(Grid, pos_saisie, direction_saisie);
+        cout << "Entrez la Direction (Q:gauche, Z:haut, D:droit, S:bas) : ";
+        if (!(cin >> direction)) break;
+        direction = toupper(direction);
 
-        bool match_trouve = false;
-//unsigned combo = 1;
+        if (direction != 'Q' && direction != 'Z' && direction != 'D' && direction != 'S') {
+            cout << "Direction invalide. Reessayez." << endl;
+            continue;
+        }
 
-        // 2. Détection et Suppression
-        do
-        {
-            match_trouve = false;
+        // --- Déplacement et Scoring ---
+        maPosition pos = {(unsigned)c1, (unsigned)r1};
+        makeAMove(grid, pos, direction);
+        currentMoves++;
 
-            // a) Test en Colonne
-            if (atLeastThreeInAColumn(Grid, pos_match, howMany_match))
-            {
-//unsigned points = calculateScore(howMany_match) * combo;
-//score += points;
-                removalInColumn(Grid, pos_match, howMany_match);
-                score += calculateScore(howMany_match); 
+        bool moved = true;
+        unsigned comboLevel = 0;
 
-                match_trouve = true;
-//combo++
+        // Boucle de réaction en chaîne
+        while (moved) {
+            moved = false;
+            unsigned howMany = 0;
+            maPosition matchPos;
+            bool matchFound = false;
+
+            // Détection du match
+            if (atLeastThreeInAColumn(grid, matchPos, howMany)) {
+                removalInColumn(grid, matchPos, howMany);
+                matchFound = true;
+            }
+            else if (atLeastThreeInARow(grid, matchPos, howMany)) {
+                removalInRow(grid, matchPos, howMany);
+                matchFound = true;
             }
 
-            // b) Test en Ligne
-            if (atLeastThreeInARow(Grid, pos_match, howMany_match))
-            {
-                removalInRow(Grid, pos_match, howMany_match);
-                score += calculateScore(howMany_match);
-                match_trouve = true;
-            }
+            // Mise à jour du score si un match a eu lieu
+            if (matchFound) {
+                comboLevel++;
+                unsigned baseScore = howMany * 2;
+                unsigned comboBonus = baseScore * comboLevel;
 
-            // Si un match a été fait, on l'affiche et on continue la boucle pour voir si les nouvelles positions (KImpossible) ont créé de nouveaux matches
-            if (match_trouve)
-            {
-// cout << "\n🔥 COMBO x" << combo - 1 << " !";
-//cout << "  Score : " << score << "\n";
-                cout << "\nMatch trouve ! Score mis a jour : " << score << "\n";
-                DisplayGrid(Grid);
-                // Pause pour que l'utilisateur voie la suppression
-                cout << "Jeu mis en pause. Appuyer sur entrée pour continuer.";
-                cin.get();
-            }
-        } while (match_trouve); // Tant qu'il y a des réactions en chaîne
+                score += comboBonus;
+                moved = true;
 
-        // 3. Mise à jour du nombre de coups
-        coups_restants--;
-        // Gestion des cas où le coup n'a produit aucun match
-        if (!match_trouve)
-        {
-            // a) Déterminer la direction inverse
-            char direction_inverse = getInverseDirection(direction_saisie);
-            // b) Annuler le déplacement (Remettre les éléments en place)
-            MakeAMove(Grid, pos_saisie, direction_inverse);
-            cout << "ÉCHEC : Pas de Match créé. Annulation du déplacement.\n";
+                cout << "\n> match de " << howMany << "! COMBO x" << comboLevel
+                     << " ! Score: +" << comboBonus << " (Base: " << baseScore << ")" << endl;
+                displayGrid(grid, score);
+            }
         }
     }
 
-    // Affichage du score final
+    // Condition de fin
     clearScreen();
-    cout << "\n##########################################\n";
-    cout << "# FIN DE PARTIE ! Le nombre de coups est atteint.\n";
-    cout << "# Votre Score Final est : " << score << "\n";
-    cout << "##########################################\n";
+    cout << "\n========================================" << endl;
+    cout << "           FIN DU MODE CLASSIQUE           " << endl;
+    cout << "   Score Final pour " << userPseudo << " : " << score << endl;
+    cout << "========================================" << endl;
+
+    // LOGIQUE DE SAUVEGARDE DE SCORE
+    vector<ScoreEntry> scores = loadScores(KFileScoresClassic);
+    ScoreEntry newEntry = {userPseudo, score};
+    scores.push_back(newEntry);
+
+    // Tri par insertion
+    for (size_t i = 1; i < scores.size(); ++i) {
+        ScoreEntry x = scores[i];
+        int j = i;
+        while (j > 0 && scores[j - 1].score < x.score) {
+            scores[j] = scores[j - 1];
+            j = j - 1;
+        }
+
+        scores[j] = x;
+    }
+
+    saveScores(KFileScoresClassic, scores);
+    displayBestScores("Classique", scores);
+
+    // Attendre l'entrée utilisateur
+    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); // Ignorer l'entrée invalide
+    cout << "Appuyez sur ENTREE pour continuer...";
+    cin.get();
+}
+
+/**
+ * @brief Boucle principale pour le Mode Contre-la-montre (Temps limité, Meilleur score).
+ */
+void runTimeTrialMode(const string& userPseudo) {
+    mat grid;
+    initGrid(grid, KGridSize);
+
+    unsigned score = 0;
+    int r1, c1;
+    char direction;
+
+    time_t startTime = time(NULL);
+    double elapsedTime; // Temps écoulé en français
+
+    cout << "--- Mode Contre-la-montre: 4 types de bonbons - " << KTimeLimit << " secondes ---" << endl;
+
+    while (true) {
+        elapsedTime = difftime(time(NULL), startTime); // source : https://en.cppreference.com/w/cpp/chrono/c/difftime
+        double timeRemaining = KTimeLimit - elapsedTime;
+
+        if (timeRemaining <= 0) {
+            break;
+        }
+
+        displayGrid(grid, score);
+        couleur(KTEXT_Black);
+        cout << "TEMPS RESTANT : ";
+        // Affiche la couleur du temps en fonction de l'urgence
+        if (timeRemaining <= 10) couleur(KRouge);
+        else if (timeRemaining <= 20) couleur(KJaune);
+        else couleur(KRVert);
+        cout << (int)timeRemaining << " secondes";
+        couleur(KTEXT_Black);
+        cout << endl;
+
+        // --- Saisie ---
+        cout << "\nEntrez la Ligne et la absonne du nombre a deplacer (ex: 0 0) : ";
+        if (!(cin >> r1 >> c1)) break;
+
+        if (r1 < 0 || r1 >= (int)KGridSize || c1 < 0 || c1 >= (int)KGridSize || grid[r1][c1] == KImpossible) {
+            std::cin.clear(); // Effacer les indicateurs d'erreur
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); // Ignorer l'entrée invalide
+            std::cout << "Entrée invalide. Veuillez réessayer.\n"; //source : https://labex.io/fr/tutorials/cpp-how-to-handle-cin-input-validation-427285
+            continue;
+        }
+
+        cout << "Entrez la Direction (Q:gauche, Z:haut, D:droit, S:bas) : ";
+        if (!(cin >> direction)) break;
+        direction = toupper(direction);
+
+        if (direction != 'Q' && direction != 'Z' && direction != 'D' && direction != 'S') {
+            cout << "Direction invalide. Reessayez." << endl;
+            continue;
+        }
+
+        // --- Déplacement et Scoring ---
+        maPosition pos = {(unsigned)c1, (unsigned)r1};
+        makeAMove(grid, pos, direction);
+
+        bool moved = true;
+        unsigned comboLevel = 0;
+
+        // Boucle de réaction en chaîne
+        while (moved) {
+            moved = false;
+            unsigned howMany = 0;
+            maPosition matchPos;
+            bool matchFound = false;
+
+            if (atLeastThreeInAColumn(grid, matchPos, howMany)) {
+                removalInColumn(grid, matchPos, howMany);
+                matchFound = true;
+            }
+            else if (atLeastThreeInARow(grid, matchPos, howMany)) {
+                removalInRow(grid, matchPos, howMany);
+                matchFound = true;
+            }
+
+            if (matchFound) {
+                comboLevel++;
+                unsigned baseScore = howMany * 2;
+                unsigned comboBonus = baseScore * comboLevel;
+
+                score += comboBonus;
+                moved = true;
+
+                cout << "\n> match de " << howMany << "! COMBO x" << comboLevel
+                     << " ! Score: +" << comboBonus << " (Base: " << baseScore << ")" << endl;
+                displayGrid(grid, score);
+            }
+        }
+    }
+
+    // --- Fin du jeu ---
+    clearScreen();
+    cout << "\n========================================" << endl;
+    cout << "              TEMPS ÉCOULÉ !              " << endl;
+    cout << "   Score Final pour " << userPseudo << " : " << score << endl;
+    cout << "========================================" << endl;
+
+    // LOGIQUE DE SAUVEGARDE DE SCORE
+    vector<ScoreEntry> scores = loadScores(KFileScoresTimeTrial);
+    ScoreEntry newEntry = {userPseudo, score};
+    scores.push_back(newEntry);
+
+    // Tri par insertion
+    for (size_t i = 1; i < scores.size(); ++i) {
+        ScoreEntry x = scores[i];
+        int j = i;
+        while (j > 0 && scores[j - 1].score < x.score) {
+            scores[j] = scores[j - 1];
+            j = j - 1;
+        }
+
+        scores[j] = x;
+    }
+
+    saveScores(KFileScoresTimeTrial, scores);
+    displayBestScores("Contre-la-montre", scores);
+
+    // Attendre l'entrée utilisateur
+    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); // Ignorer l'entrée invalide
+    cout << "Appuyez sur ENTREE pour continuer...";
+    cin.get();
+}
+
+/**
+ * @brief Boucle principale pour le Mode Cible (Atteindre 1000 de score avec le moins de coups).
+ */
+void runTargetMode(const string& userPseudo) {
+    mat grid;
+    initGrid(grid, KGridSize);
+
+    unsigned score = 0;
+    unsigned currentMoves = 0;
+    int r1, c1;
+    char direction;
+
+    cout << "--- Mode Cible: Atteindre " << KTargetScore << " points (Coups minimum) ---" << endl;
+
+    while (score < KTargetScore) {
+        displayGrid(grid, score);
+        couleur(KTEXT_Black);
+        cout << "COUPS UTILISES : " << currentMoves << endl;
+        cout << "OBJECTIF : " << KTargetScore << " points" << endl;
+
+        // --- Saisie ---
+        cout << "\nEntrez la Ligne et la absonne du nombre a deplacer (ex: 0 0) : ";
+        if (!(cin >> r1 >> c1)) break;
+
+        if (r1 < 0 || r1 >= (int)KGridSize || c1 < 0 || c1 >= (int)KGridSize || grid[r1][c1] == KImpossible) {
+            std::cin.clear(); // Effacer les indicateurs d'erreur
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); // Ignorer l'entrée invalide
+            std::cout << "Entrée invalide. Veuillez réessayer.\n"; //source : https://labex.io/fr/tutorials/cpp-how-to-handle-cin-input-validation-427285
+            continue;
+        }
+
+        cout << "Entrez la Direction (Q:gauche, Z:haut, D:droit, S:bas) : ";
+        if (!(cin >> direction)) break;
+        direction = toupper(direction);
+
+        if (direction != 'Q' && direction != 'Z' && direction != 'D' && direction != 'S') {
+            cout << "Direction invalide. Reessayez." << endl;
+            continue;
+        }
+
+        // --- Déplacement et Scoring ---
+        maPosition pos = {(unsigned)c1, (unsigned)r1};
+        makeAMove(grid, pos, direction);
+        currentMoves++;
+
+        bool moved = true;
+        unsigned comboLevel = 0;
+
+        // Boucle de réaction en chaîne
+        while (moved) {
+            moved = false;
+            unsigned howMany = 0;
+            maPosition matchPos;
+            bool matchFound = false;
+
+            // Détection du match
+            if (atLeastThreeInAColumn(grid, matchPos, howMany)) {
+                removalInColumn(grid, matchPos, howMany);
+                matchFound = true;
+            }
+            else if (atLeastThreeInARow(grid, matchPos, howMany)) {
+                removalInRow(grid, matchPos, howMany);
+                matchFound = true;
+            }
+
+            // Mise à jour du score si un match a eu lieu
+            if (matchFound) {
+                comboLevel++;
+                unsigned baseScore = howMany * 2;
+                unsigned comboBonus = baseScore * comboLevel;
+
+                score += comboBonus;
+                moved = true;
+
+                cout << "\n> match de " << howMany << "! COMBO x" << comboLevel
+                     << " ! Score: +" << comboBonus << " (Base: " << baseScore << ")" << endl;
+                displayGrid(grid, score);
+            }
+        }
+    }
+
+    // Condition de fin (Objectif atteint)
+    clearScreen();
+    cout << "\n========================================" << endl;
+    cout << "           OBJECTIF ATTEINT !           " << endl;
+    cout << "   Score : " << score << " points" << endl;
+    cout << "   Coups utilises : " << currentMoves << endl;
+    cout << "========================================" << endl;
+
+    // LOGIQUE DE SAUVEGARDE DE SCORE (Coups minimum)
+    vector<TargetScoreEntry> scores = loadTargetScores(KFileScoresTarget);
+    TargetScoreEntry newEntry = {userPseudo, currentMoves};
+    scores.push_back(newEntry);
+
+    // Tri par insertion
+    for (size_t i = 1; i < scores.size(); ++i) {
+        TargetScoreEntry x = scores[i];
+        int j = i;
+        while (j > 0 && scores[j - 1].moves < x.moves) {
+            scores[j] = scores[j - 1];
+            j = j - 1;
+        }
+
+        scores[j] = x;
+    }
+
+    saveTargetScores(KFileScoresTarget, scores);
+    displayBestTargetScores("Mode Cible", scores);
+
+    // Attendre l'entrée utilisateur
+    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); // Ignorer l'entrée invalide
+    cout << "Appuyez sur ENTREE pour continuer...";
+    cin.get();
+}
+
+
+// --- 6. MAIN ALGORITHM (Menu) ---
+
+void displayMenu() {
+    clearScreen();
+    couleur(KTEXT_Black);
+    cout << "========================================" << endl;
+    cout << "         SELECTIONNEZ LE MODE DE JEU             " << endl;
+    cout << "========================================" << endl;
+    cout << "1. Mode Classique (Meilleur score en " << KMaxMoves << " coups)" << endl;
+    cout << "2. Mode Contre-la-montre (Meilleur score en " << KTimeLimit << " secondes)" << endl;
+    cout << "3. Mode Cible (Atteindre " << KTargetScore << " points, coups minimum)" << endl;
+    cout << "4. Quitter" << endl;
+    cout << "----------------------------------------" << endl;
+    cout << "Entrez votre choix : ";
+}
+
+int main() {
+    srand(time(0));
+    string userPseudo;
+    int choice;
+
+    // Saisie du pseudo
+    clearScreen();
+    couleur(KTEXT_Black);
+    cout << "======================================" << endl;
+    cout << "     BIENVENUE DANS CANDY CRUSH !     " << endl;
+    cout << "======================================" << endl;
+    cout << "Entrez votre pseudo: ";
+    if (!(cin >> userPseudo)) {
+        couleur(KReset);
+        return 0;
+    }
+    // Vider la mémoire après la saisie du pseudo
+    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); // Ignorer l'entrée invalide
+
+    do {
+        displayMenu();
+        if (!(cin >> choice)) break;
+
+        // Vider la mémoire après la saisie du choix
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); // Ignorer l'entrée invalide
+
+        switch (choice) {
+        case 1:
+            runClassicMode(userPseudo);
+            break;
+        case 2:
+            runTimeTrialMode(userPseudo);
+            break;
+        case 3:
+            runTargetMode(userPseudo);
+            break;
+        case 4:
+            cout << "Au revoir!" << endl;
+            break;
+        default:
+            cout << "Choix invalide. Reessayez." << endl;
+            cin.clear();
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); // Ignorer l'entrée invalide
+        }
+    } while (choice != 4);
+
+    // Réinitialisation de la couleur du terminal avant de quitter
+    couleur(KReset);
 
     return 0;
 }
