@@ -17,6 +17,7 @@ const unsigned KBleu    (34);
 const unsigned KMAgenta (35);
 const unsigned KCyan    (36);
 const unsigned KImpossible (0);
+unsigned combo = 1;
 
 void clearScreen () {
     cout << "\033[H\033[2J";
